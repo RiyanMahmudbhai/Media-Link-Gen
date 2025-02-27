@@ -38,12 +38,14 @@ async def main():
     # Create Application
     application = Application.builder().token(TOKEN).build()
 
-    # Add handler for forwarded videos
+    # Fixed handler configuration
     application.add_handler(MessageHandler(
         filters.FORWARDED & (
             filters.VIDEO | 
             (filters.DOCUMENT & filters.Document.MIME_TYPE.regex(r'^video/.*'))
-        , handle_video))
+        ),
+        handle_video
+    ))
 
     # Deployment configuration
     if 'HEROKU_APP_NAME' in os.environ:  # Heroku deployment
