@@ -34,11 +34,11 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Error: {e}")
         await message.reply_text("Failed to generate link.")
 
-async def main():
+def main() -> None:
     # Create Application
     application = Application.builder().token(TOKEN).build()
 
-    # Fixed handler configuration
+    # Add handler
     application.add_handler(MessageHandler(
         filters.FORWARDED & (
             filters.VIDEO | 
@@ -48,17 +48,17 @@ async def main():
     ))
 
     # Deployment configuration
-    if 'HEROKU_APP_NAME' in os.environ:  # Heroku deployment
+    if 'HEROKU_APP_NAME' in os.environ:  # Heroku
         app_name = os.environ['HEROKU_APP_NAME']
         port = int(os.environ.get('PORT', 5000))
-        await application.run_webhook(
+        application.run_webhook(
             listen="0.0.0.0",
             port=port,
             url_path=TOKEN,
             webhook_url=f"https://{app_name}.herokuapp.com/{TOKEN}"
         )
-    else:  # Local/VPS deployment
-        await application.run_polling()
+    else:  # Local/VPS
+        application.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
