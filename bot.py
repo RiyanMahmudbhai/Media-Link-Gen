@@ -34,12 +34,12 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
 
-    # Corrected document filter
+    # Properly closed parentheses
     app.add_handler(MessageHandler(
         filters.FORWARDED & (
             filters.VIDEO | 
             (filters.Document.ALL & filters.Document.MIME_TYPE.regex(r'^video/.*'))
-        ,
+        ),
         handle_video
     ))
 
