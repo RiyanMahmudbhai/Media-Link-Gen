@@ -1,12 +1,7 @@
 import os
 import logging
 from telegram import Update
-from telegram.ext import (
-    Application,
-    MessageHandler,
-    filters,
-    ContextTypes
-)
+from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
 # Configure logging
 logging.basicConfig(
@@ -20,14 +15,18 @@ TOKEN = os.getenv('BOT_TOKEN')
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         msg = update.message
-        file_id = msg.video.file_id if msg.video else msg.document.file_id
-        
+        if msg.video:
+            file_id = msg.video.file_id
+        elif msg.document:
+            file_id = msg.document.file_id
+        else:
+            await msg.reply_text("Please forward a video file")
+            return
+
         file = await context.bot.get_file(file_id)
         await msg.reply_text(
             f"https://api.telegram.org/file/bot{TOKEN}/{file.file_path}"
         )
-    except AttributeError:
-        await msg.reply_text("Please forward a video file")
     except Exception as e:
         logger.error(f"Error: {e}")
         await msg.reply_text("Failed to process video")
@@ -35,25 +34,24 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
 
-    # Video handler (forwarded videos or documents)
+    # Corrected document filter
     app.add_handler(MessageHandler(
         filters.FORWARDED & (
             filters.VIDEO | 
-            (filters.DOCUMENT & filters.Document.MIME_TYPE.regex(r'^video/.*'))
-        ),
+            (filters.Document.ALL & filters.Document.MIME_TYPE.regex(r'^video/.*'))
+        ,
         handle_video
     ))
 
-    # Webhook configuration for Heroku
+    # Webhook configuration
     if 'HEROKU_APP_NAME' in os.environ:
         app_name = os.getenv('HEROKU_APP_NAME')
         app.run_webhook(
             listen="0.0.0.0",
             port=int(os.getenv('PORT', 5000)),
-            secret_token='WEBHOOK_SECRET',
             webhook_url=f"https://{app_name}.herokuapp.com/{TOKEN}"
         )
-    else:  # Polling for local/VPS
+    else:
         app.run_polling()
 
 if __name__ == '__main__':
